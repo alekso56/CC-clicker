@@ -38,9 +38,8 @@ local function loadSaveData()
         file.close()
 end
 
-
-local function vars()
 loadSaveData()
+purchaseMon = peripheral.wrap("back")
 cookie = {}
 cookie.x = {}
 cookie.y = {}
@@ -74,22 +73,26 @@ buildings = {}
         for i = 1, 11 do
                 buttonInfo[i] = {}
         end
-       
+		
+		term.redirect("back")
+        x1,monHeight = term.getSize()
+	    term.clear()
+		term.setCursorPos(1,1)
+	    term.redirect("right")
         --buttonInfo[i] = {x1, x2, y1, y2, text1, text2, monitor}
-        buttonInfo[1] = {1, 15, monHeight - 38, monHeight - 36, "Buy Cursor", "", "monitor_1"}
-        buttonInfo[2] = {1, 15, monHeight - 34, monHeight - 32, "Buy Grandma", "", "monitor_1"}
-        buttonInfo[3] = {1, 15, monHeight - 30, monHeight - 28, "Buy Farm", "", "monitor_1"}
-        buttonInfo[4] = {1, 15, monHeight - 26, monHeight - 24, "Buy Factory", "", "monitor_1"}
-        buttonInfo[5] = {1, 15, monHeight - 22, monHeight - 20, "Buy Mine", "", "monitor_1"}
-        buttonInfo[6] = {1, 15, monHeight - 18, monHeight - 16, "Buy Shipment", "", "monitor_1"}
-        buttonInfo[7] = {1, 15, monHeight - 14, monHeight - 12, "Buy Alchemy", "Lab", "monitor_1"}
-        buttonInfo[8] = {1, 15, monHeight - 10, monHeight - 8, "Buy Portal", "", "monitor_1"}
-        buttonInfo[9] = {1, 15, monHeight - 6, monHeight - 4, "Buy Time", "Machine", "monitor_1"}
-        buttonInfo[10] = {1, 15, monHeight - 2, monHeight, "Buy Antimatter", "Condenser", "monitor_1"}
-        buttonInfo[11] = {1, 15, math.floor(monHeight/2)-1, math.floor(monHeight/2)+1, "Reset", "Game", "monitor_2"}
+        buttonInfo[1] = {1, 15, monHeight - 38, monHeight - 36, "Buy Cursor", ""}
+        buttonInfo[2] = {1, 15, monHeight - 34, monHeight - 32, "Buy Grandma", ""}
+        buttonInfo[3] = {1, 15, monHeight - 30, monHeight - 28, "Buy Farm", ""}
+        buttonInfo[4] = {1, 15, monHeight - 26, monHeight - 24, "Buy Factory", ""}
+        buttonInfo[5] = {1, 15, monHeight - 22, monHeight - 20, "Buy Mine", ""}
+        buttonInfo[6] = {1, 15, monHeight - 18, monHeight - 16, "Buy Shipment", ""}
+        buttonInfo[7] = {1, 15, monHeight - 14, monHeight - 12, "Buy Alchemy", "Lab"}
+        buttonInfo[8] = {1, 15, monHeight - 10, monHeight - 8, "Buy Portal", ""}
+        buttonInfo[9] = {1, 15, monHeight - 6, monHeight - 4, "Buy Time", "Machine"}
+        buttonInfo[10] = {1, 15, monHeight - 2, monHeight, "Buy Antimatter", "Condenser"}
+        buttonInfo[11] = {1, 15, math.floor(monHeight/2)-1, math.floor(monHeight/2)+1, "Reset", "Game"}
 cookiez= 9453452
 term.clear()
-end
 
 local function Cclick(x,y)
     for key, value in pairs(cookie.x) do
@@ -98,6 +101,42 @@ local function Cclick(x,y)
   		end
     end
     return false
+end
+
+local function drawButton(inputData)
+        local x1, x2, y1, y2, text, text2 = unpack(inputData)
+        purchaseMon.setBackgroundColor(colors.lightGray)
+        for i=x1, x2 do
+                for j=y1, y2 do
+                purchaseMon.setCursorPos(i,j)
+                purchaseMon.write(" ")
+                end
+        end
+        purchaseMon.setCursorPos(math.floor(((x2+x1)/2)-(string.len(text)/2)),math.floor((y2+y1)/2))
+        purchaseMon.write(text)
+        purchaseMon.setCursorPos(math.floor(((x2+x1)/2)-(string.len(text2)/2)),math.floor((y2+y1)/2)+1)
+        purchaseMon.write(text2)
+        purchaseMon.setBackgroundColor(colors.cyan)
+end
+
+
+local function loadPurchases()
+        purchaseMon.setBackgroundColor(colors.cyan)
+        for i = 1, monWidth do
+                for j = 1, monHeight do
+                        purchaseMon.setCursorPos(i,j)
+                        purchaseMon.write(" ")
+                end
+        end
+        for i = 1, 10 do
+                drawButton(buttonInfo[i])
+                purchaseMon.setCursorPos(buttonInfo[i][2]+1,buttonInfo[i][3])
+                purchaseMon.write("Cost: "..buildings[i][5])
+                purchaseMon.setCursorPos(buttonInfo[i][2]+1,(buttonInfo[i][3]+buttonInfo[i][4])/2)
+                purchaseMon.write("Owned: "..buildings[i][4])
+                purchaseMon.setCursorPos(buttonInfo[i][2]+1,buttonInfo[i][4])
+                purchaseMon.write("Cookies Per Second: "..buildings[i][6])
+        end
 end
 
 local function Options(x,y)
@@ -144,10 +183,11 @@ local function pixel(x,y,color,what)
 end
 
 local function mouseclick(x,y,mon)
-local cookieC = Cclick(x,y)
-local options = Options(x,y)
-if mon == "monitor_0" then
-local tower = isValidTowerBought(x,y)
+if mon == "back" then
+ tower = isValidTowerBought(x,y)
+else
+ cookieC = Cclick(x,y)
+ options = Options(x,y)
 end
  if cookieC then
 -- print("CLICKED AT COOKIE!")
@@ -160,22 +200,15 @@ end
                         towerBought = tower[2]
                         buildings[towerBought][4] = buildings[towerBought][4] + 1
                         cookiez = cookiez - buildings[towerBought][5]
+						loadPurchases()
                 end
  end
 end
 
-local function get(value) -- returns string side matching value else false
-for _,v in pairs(rs.getSides()) do
-if peripheral.getType(v) == value then
- return v
+if peripheral.getType("back") == "monitor" and peripheral.getType("right") == "monitor" then
+else
+ error()
 end
-end
-return false
-end
-
---get stuff
-modem = get("modem")
-screen = get("monitor")
 
 --aquire cookie
 local function drawCookie()
@@ -212,20 +245,10 @@ end
 pixel(x1/10,y1/5-2,colors.red,"Total Cookies:"..cookiez)
 end
 
-if modem then
-modems = peripheral.wrap(modem)
-print("modem found")
-end
-
-if screen then
-screens = peripheral.wrap(screen)
---print("screen found")
-term.redirect(screens)
-end
-
 local function init()
  drawOnce = true
  drawCookie()
+ loadPurchases()
 end
 
 local function options()
@@ -234,8 +257,11 @@ term.clear()
 term.setCursorPos(1,1)
 pixel(x1-6,y1,colors.red,"Cookie")
 options= true
-while true do
---nothing :P
+while not optionsClicked do
+ local event, button, x, y = os.pullEvent()
+ if x == x1-6 and y == y1 then
+  optionsClicked = true
+ end
 end
 init()
 end
